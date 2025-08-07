@@ -1,0 +1,4 @@
+{
+    "command": "npm run build",
+    "working_directory": "/home/kavia/workspace/code-generation/cinema-ticket-booking-system-2274/movie_ticket_frontend"
+}
