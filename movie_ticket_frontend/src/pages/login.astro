@@ -1,0 +1,62 @@
+---
+import Layout from '../layouts/Layout.astro';
+import NavBar from '../components/NavBar.astro';
+
+let error = "";
+let isLogin = true;
+
+Astro.request.formData().then(fd => {
+  const data = Object.fromEntries(fd);
+  if (data.email && data.password) {
+    fetch(import.meta.env.PUBLIC_API_BASE + (isLogin ? '/login' : '/signup'), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    })
+    .then(res => res.json())
+    .then(result => {
+      if (result.token && result.user) {
+        localStorage.setItem('jwt', result.token);
+        localStorage.setItem('user', JSON.stringify(result.user));
+        location.href = "/";
+      } else {
+        error = result.error || "Authentication failed.";
+      }
+    })
+    .catch(() => error = "Server error.");
+  }
+});
+---
+<Layout>
+  <NavBar user={null}/>
+  <main class="centered-box">
+    <form id="login-form" method="POST" class="card">
+      <h2 style="margin-bottom: 0.5em;">{isLogin ? "Login" : "Sign Up"}</h2>
+      <label>Email
+        <input name="email" type="email" required autocomplete="username" />
+      </label>
+      <label>Password
+        <input name="password" type="password" required autocomplete="current-password"/>
+      </label>
+      {error ? <div class="error">{error}</div> : null}
+      <button class="btn btn-primary" type="submit">{isLogin ? "Login" : "Sign Up"}</button>
+      <button type="button"
+        class="btn btn-secondary"
+        style="margin-left:.6em"
+        onClick={() => { isLogin = !isLogin; document.getElementById('login-form').reset(); }}>{isLogin ? "Sign Up" : "Login"}
+      </button>
+    </form>
+  </main>
+</Layout>
+<style>
+@import "../styles/theme.css";
+.centered-box {
+  max-width: 420px;
+  margin: 7vh auto;
+}
+.error {
+  color: red;
+  margin-bottom: .6em;
+  font-size: 1em;
+}
+</style>

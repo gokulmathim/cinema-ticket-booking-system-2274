@@ -1,0 +1,50 @@
+---
+import { loadStripe } from '@stripe/stripe-js';
+
+const { open, amount, onSuccess, onFailure } = Astro.props;
+let error = "";
+let processing = false;
+let stripe = null;
+let cardElement = null;
+
+Astro.onMount(async () => {
+  if (open && !stripe) {
+    stripe = await loadStripe(import.meta.env.PUBLIC_STRIPE_PK);
+    // Mount Stripe Elements card here if UI implemented
+  }
+});
+// PUBLIC_INTERFACE
+/**
+ * StripePaymentModal - Shows a Stripe payment form modal, handles basic demo payment logic.
+ * Props: open (bool), amount (number), onSuccess (function), onFailure (function)
+ * TODO: Replace with Stripe Elements integration for live.
+ */
+---
+{open && (
+  <div class="modal-backdrop">
+    <form class="modal" onSubmit={async e => {
+      e.preventDefault();
+      processing = true;
+      try {
+        // Real implementation: use stripe.confirmCardPayment() or Stripe Elements
+        // For now, simulate payment flow
+        await new Promise(resolve => setTimeout(resolve, 1100));
+        onSuccess();
+      } catch (err) {
+        error = "Payment failed.";
+        onFailure();
+      }
+      processing = false;
+    }}>
+      <h2>Payment</h2>
+      <div>Amount: <b>${amount}</b></div>
+      {/* Stripe Elements Card Element here */}
+      <button class="btn btn-primary" type="submit" disabled={processing}>
+        {processing ? "Processing..." : "Pay"}
+      </button>
+      {error && <div class="error" style="margin-top:.44em;">{error}</div>}
+      <button class="btn btn-secondary" type="button" style="margin-top:1em;" onClick={onFailure}>Cancel</button>
+    </form>
+  </div>
+)}
+<!-- modal styles imported already -->

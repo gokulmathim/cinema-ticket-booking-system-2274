@@ -1,0 +1,42 @@
+---
+import Layout from '../layouts/Layout.astro';
+import NavBar from '../components/NavBar.astro';
+import { apiFetch, getUser } from '../utils/api.ts';
+
+let user = getUser();
+let bookings = [];
+Astro.fetchContent().then(async () => {
+  bookings = await apiFetch('/my/bookings');
+});
+
+---
+<Layout>
+  <NavBar user={user} />
+  <main style="max-width:750px; margin:2em auto;">
+    <h1>My Tickets</h1>
+    {bookings.length === 0 ? (
+      <section class="card">No bookings yet. <a href="/movies" style="margin-left:4px;">Browse movies!</a></section>
+    ) : (
+      <div class="bookings-list">
+        {bookings.map(bk => (
+          <div class="card booking-card">
+            <div>
+              <h2>{bk.movie_title}</h2>
+              <div style="color:var(--color-text);font-size:14px;">
+                {new Date(bk.showtime_datetime).toLocaleString()} • Screen: {bk.screen_name}
+              </div>
+              <div>Seats: {bk.seats.join(", ")}</div>
+            </div>
+            <div class="booking-status">{bk.status === "upcoming" ? "Upcoming" : "Past"}</div>
+          </div>
+        ))}
+      </div>
+    )}
+  </main>
+</Layout>
+<style>
+@import "../styles/theme.css";
+.bookings-list { display: flex; flex-direction: column; gap: 1em; }
+.booking-card { display: flex; align-items: center; justify-content: space-between; }
+.booking-status { font-size: 1.03em; color: var(--color-primary);}
+</style>

@@ -1,0 +1,70 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import NavBar from '../../components/NavBar.astro';
+import { apiFetch, getUser } from '../../utils/api.ts';
+const movieId = Astro.url.pathname.split("/").slice(-1)[0];
+
+let movie = null;
+let showtimes = [];
+let user = getUser();
+
+Astro.fetchContent().then(async () => {
+  movie = await apiFetch(`/movies/${movieId}`);
+  showtimes = await apiFetch(`/movies/${movieId}/showtimes`);
+});
+function goToSeats(showtimeId) {
+  window.location.href = `/movies/${movieId}/showtimes/${showtimeId}/seats`;
+}
+---
+<Layout>
+  <NavBar user={user}/>
+  <main style="padding: 2em;">
+    {movie && (
+      <div class="movie-details">
+        <img class="movie-details-poster" src={movie.poster_url || "/placeholder-movie.jpg"} alt={movie.title} />
+        <div>
+          <h1>{movie.title}</h1>
+          <p>{movie.description}</p>
+          <div class="showtimes">
+            <h2>Showtimes</h2>
+            <div class="showtime-list">
+              {showtimes.map(st => (
+                <div class="card showtime-card">
+                  <div>
+                    <span>{new Date(st.datetime).toLocaleString()}</span>
+                    <span> | {st.screen_name}</span>
+                  </div>
+                  <button class="btn btn-primary" onClick={() => goToSeats(st.id)}>
+                    Select Seats
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+  </main>
+</Layout>
+<style>
+@import "../../styles/theme.css";
+.movie-details {
+  display: flex;
+  gap: 2.5em;
+}
+.movie-details-poster {
+  width: 270px;
+  border-radius: 9px;
+  object-fit: cover;
+}
+.showtimes { margin-top: 1.8em; }
+.showtime-list { display: flex; flex-direction: column; gap: 1em; }
+.showtime-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+@media (max-width: 900px) {
+  .movie-details { flex-direction: column; align-items: center; }
+}
+</style>

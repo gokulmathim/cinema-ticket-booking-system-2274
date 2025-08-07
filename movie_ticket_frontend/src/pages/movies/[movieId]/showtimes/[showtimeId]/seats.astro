@@ -1,0 +1,127 @@
+---
+import Layout from '../../../../layouts/Layout.astro';
+import NavBar from '../../../../components/NavBar.astro';
+import { apiFetch, getUser } from '../../../../utils/api.ts';
+const movieId = Astro.url.pathname.split("/")[2];
+const showtimeId = Astro.url.pathname.split("/")[4];
+let seats = [];
+let taken = [];
+let selected = [];
+let showtime = null;
+let user = getUser();
+
+Astro.fetchContent().then(async () => {
+  showtime = await apiFetch(`/showtimes/${showtimeId}`);
+  seats = await apiFetch(`/showtimes/${showtimeId}/seats`);
+  taken = seats.filter(s => s.booked);
+});
+
+function toggleSeat(selectSeat) {
+  if (selectSeat.booked) return;
+  if (selected.find(seat => seat.id === selectSeat.id)) {
+    selected = selected.filter(seat => seat.id !== selectSeat.id);
+  } else {
+    selected = [...selected, selectSeat];
+  }
+}
+
+let bookingError = "";
+let bookingModal = false;
+
+async function confirmBooking() {
+  bookingError = "";
+  try {
+    const body = {
+      showtime_id: showtimeId,
+      seats: selected.map(s => s.id),
+    };
+    // Placeholder: get payment token from Stripe
+    // Assume we open the payment modal and get token before this step.
+    const paymentSuccess = await fakeStripePayment();
+    if (!paymentSuccess) {
+      bookingError = "Payment failed or cancelled.";
+      return;
+    }
+    await apiFetch('/bookings', {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+    bookingModal = true;
+  } catch (e) {
+    bookingError = e.message || "Booking failed.";
+  }
+}
+function closeModal() {
+  bookingModal = false;
+  setTimeout(() => window.location.href = "/my-tickets", 550);
+}
+
+// Placeholder for demo
+async function fakeStripePayment() {
+  // ... integrate Stripe Elements here
+  return confirm("Proceed with payment?");
+}
+---
+<Layout>
+  <NavBar user={user}/>
+  <main class="seats-main">
+    <h1>Choose Your Seats</h1>
+    <h2>
+      {showtime ? (
+        <>
+          {showtime.movie_title} • {new Date(showtime.datetime).toLocaleString()} <br/><span>Screen: {showtime.screen_name}</span>
+        </>
+      ) : "Loading..."}
+    </h2>
+    <div class="seats-legend">
+      <span class="seat available"></span> Available
+      <span class="seat selected"></span> Selected
+      <span class="seat booked"></span> Booked
+    </div>
+    <div class="seats-grid">
+      {seats.map(seat => (
+        <button
+          class={
+            "seat"
+            + (seat.booked ? " booked" : "")
+            + (selected.find(s => s.id === seat.id) ? " selected" : "")
+          }
+          disabled={seat.booked}
+          onClick={() => toggleSeat(seat)}>
+          {seat.label}
+        </button>
+      ))}
+    </div>
+    <div class="seats-actions">
+      <button class="btn btn-accent"
+        disabled={selected.length === 0}
+        onClick={confirmBooking}>
+        Confirm & Pay
+      </button>
+      {bookingError && <span class="error">{bookingError}</span>}
+    </div>
+    {bookingModal && (
+    <div class="modal-backdrop">
+      <div class="modal" style="text-align: center;">
+        <h2>Booking Confirmed 🎉</h2>
+        <p>Your seats have been booked.<br/> You will be redirected to My Tickets page shortly.</p>
+        <button class="btn btn-primary" onClick={closeModal}>Go to My Tickets</button>
+      </div>
+    </div>
+    )}
+  </main>
+</Layout>
+<style>
+.seats-main { max-width: 650px; margin: 2em auto; }
+.seats-legend { margin: .7em 0 1.3em; font-size: 1em; display: flex; gap: 1.1em; }
+.seat { width: 34px; height: 34px; border-radius: 6px; background: #f6f8fa; border: 1px solid #b5b8ba; margin: 2.5px; cursor: pointer; transition: background .16s, color .16s;}
+.seat.booked { background: #e0e0e0; color: #bbb; border: 1px solid #bbb; cursor: not-allowed;}
+.seat.selected { background: var(--color-accent); color: #272727; border: 2px solid var(--color-primary);}
+.seats-grid { display: flex; flex-wrap: wrap; max-width: 320px; margin: 0 auto 1.4em; gap: 0.5em;}
+.seats-actions { margin-top: 1.2em; display: flex; flex-direction: column; align-items: center; }
+@media (max-width: 600px) {
+  .seats-grid { max-width: 99vw; }
+  .seats-main { padding: 1em; }
+}
+.error { color: red; margin-top: .5em; }
+</style>

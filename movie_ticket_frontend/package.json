@@ -10,7 +10,8 @@
     "lint": "npx eslint"
   },
   "dependencies": {
-    "astro": "5.4.2"
+    "astro": "5.4.2",
+    "@stripe/stripe-js": "^2.21.0"
   },
   "devDependencies": {
     "@eslint/js": "9.24.0",

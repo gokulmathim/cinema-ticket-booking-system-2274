@@ -1,11 +1,23 @@
 ---
-import Welcome from '../components/Welcome.astro';
 import Layout from '../layouts/Layout.astro';
+import NavBar from '../components/NavBar.astro';
+import { getUser } from '../utils/api.ts';
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+let user = getUser();
+
+if (user) {
+  // If user is logged in, redirect to /movies
+  if (typeof window !== 'undefined') window.location.href = "/movies";
+}
 ---
 
 <Layout>
-	<Welcome />
+  <NavBar user={user} />
+  <main style="min-height:70vh;display:flex;align-items:center;justify-content:center;">
+    <section class="card" style="text-align:center;">
+      <h1>Welcome to MovieBooker 🎬</h1>
+      <p>Browse movies &amp; book your perfect seat!</p>
+      <a href="/movies" class="btn btn-primary" style="margin-top:1.2em;">Browse Movies</a>
+    </section>
+  </main>
 </Layout>
